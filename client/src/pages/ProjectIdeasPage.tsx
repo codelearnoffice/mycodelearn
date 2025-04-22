@@ -66,7 +66,7 @@ export default function ProjectIdeasPage() {
       setProjectTitle(`${skillLevel} ${programmingLanguage} ${interestArea} Project`);
     } catch (error) {
       console.error("Error generating project idea:", error);
-      alert(error.message || "Failed to generate project idea");
+      alert(error instanceof Error ? error.message : "Failed to generate project idea");
     } finally {
       setLoading(false);
     }

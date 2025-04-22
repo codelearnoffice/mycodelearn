@@ -109,61 +109,57 @@ const Navbar = () => {
       
       <div className={cn("md:hidden", mobileMenuVisible ? "block" : "hidden")}>
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          <Link href="/code-explanation">
-            <a 
-              className={cn(
-                "block text-base font-medium p-2",
-                isActivePath("/code-explanation") 
-                  ? "text-secondary font-semibold" 
-                  : "text-primary hover:text-secondary"
-              )}
-              onClick={() => setMobileMenuVisible(false)}
-            >
-              Code Explanation
-            </a>
+          <Link 
+            href="/code-explanation"
+            className={cn(
+              "block text-base font-medium p-2",
+              isActivePath("/code-explanation") 
+                ? "text-secondary font-semibold" 
+                : "text-primary hover:text-secondary"
+            )}
+            onClick={() => setMobileMenuVisible(false)}
+          >
+            Code Explanation
           </Link>
-          <Link href="/code-feedback">
-            <a 
-              className={cn(
-                "block text-base font-medium p-2",
-                isActivePath("/code-feedback") 
-                  ? "text-secondary font-semibold" 
-                  : "text-primary hover:text-secondary"
-              )}
-              onClick={() => setMobileMenuVisible(false)}
-            >
-              Code Feedback
-            </a>
+          <Link 
+            href="/code-feedback"
+            className={cn(
+              "block text-base font-medium p-2",
+              isActivePath("/code-feedback") 
+                ? "text-secondary font-semibold" 
+                : "text-primary hover:text-secondary"
+            )}
+            onClick={() => setMobileMenuVisible(false)}
+          >
+            Code Feedback
           </Link>
-          <Link href="/project-ideas">
-            <a 
-              className={cn(
-                "block text-base font-medium p-2",
-                isActivePath("/project-ideas") 
-                  ? "text-secondary font-semibold" 
-                  : "text-primary hover:text-secondary"
-              )}
-              onClick={() => setMobileMenuVisible(false)}
-            >
-              Project Ideas
-            </a>
+          <Link 
+            href="/project-ideas"
+            className={cn(
+              "block text-base font-medium p-2",
+              isActivePath("/project-ideas") 
+                ? "text-secondary font-semibold" 
+                : "text-primary hover:text-secondary"
+            )}
+            onClick={() => setMobileMenuVisible(false)}
+          >
+            Project Ideas
           </Link>
           
           {user ? (
             <>
-              <Link href="/saved-projects">
-                <a 
-                  className={cn(
-                    "block text-base font-medium p-2 flex items-center gap-2",
-                    isActivePath("/saved-projects") 
-                      ? "text-secondary font-semibold" 
-                      : "text-primary hover:text-secondary"
-                  )}
-                  onClick={() => setMobileMenuVisible(false)}
-                >
-                  <Folder size={16} />
-                  Saved Projects
-                </a>
+              <Link 
+                href="/saved-projects"
+                className={cn(
+                  "block text-base font-medium p-2 flex items-center gap-2",
+                  isActivePath("/saved-projects") 
+                    ? "text-secondary font-semibold" 
+                    : "text-primary hover:text-secondary"
+                )}
+                onClick={() => setMobileMenuVisible(false)}
+              >
+                <Folder size={16} />
+                Saved Projects
               </Link>
               <Button 
                 className="block w-full bg-red-500 text-white hover:bg-red-600 mt-4 flex items-center justify-center gap-2"

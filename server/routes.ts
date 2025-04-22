@@ -3,8 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { db } from "./db";
-import { earlyAccessSignups, insertEarlyAccessSignupSchema, User } from "@shared/schema";
-import { eq, sql } from "drizzle-orm";
+import { earlyAccessSignups, featureUsage, insertEarlyAccessSignupSchema, User } from "@shared/schema";
+import { eq, sql, and } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
@@ -170,6 +170,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json({ projectIdea });
     } catch (error) {
       console.error("Error in project idea generation:", error);
+      return res.status(500).json({ error: "An error occurred" });
+    }
+  });
+  
+  // Save a project idea for an authenticated user
+  app.post("/api/projects", async (req, res) => {
+    try {
+      // Check if user is authenticated
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      const { title, description, content } = req.body;
+      
+      if (!title || !content) {
+        return res.status(400).json({ error: "Title and content are required" });
+      }
+      
+      // Save the project
+      const project = await storage.saveProject({
+        userId: req.user.id,
+        title,
+        description: description || "",
+        content
+      });
+      
+      return res.status(201).json(project);
+    } catch (error) {
+      console.error("Error saving project:", error);
+      return res.status(500).json({ error: "An error occurred" });
+    }
+  });
+  
+  // Get all projects for an authenticated user
+  app.get("/api/projects", async (req, res) => {
+    try {
+      // Check if user is authenticated
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      // Get the user's projects
+      const projects = await storage.getUserProjects(req.user.id);
+      
+      return res.json(projects);
+    } catch (error) {
+      console.error("Error getting projects:", error);
+      return res.status(500).json({ error: "An error occurred" });
+    }
+  });
+  
+  // Track feature usage
+  app.post("/api/feature-usage/:featureType", async (req, res) => {
+    try {
+      const { featureType } = req.params;
+      const userId = req.isAuthenticated() ? req.user.id : null;
+      
+      // Validate feature type
+      if (!["explanation", "feedback", "project"].includes(featureType)) {
+        return res.status(400).json({ error: "Invalid feature type" });
+      }
+      
+      // Track usage
+      await storage.trackFeatureUsage(userId, featureType);
+      
+      return res.status(201).json({ message: "Usage tracked successfully" });
+    } catch (error) {
+      console.error("Error tracking feature usage:", error);
+      return res.status(500).json({ error: "An error occurred" });
+    }
+  });
+  
+  // Get feature usage count
+  app.get("/api/feature-usage/:featureType/count", async (req, res) => {
+    try {
+      const { featureType } = req.params;
+      const userId = req.isAuthenticated() ? req.user.id : null;
+      
+      // Validate feature type
+      if (!["explanation", "feedback", "project"].includes(featureType)) {
+        return res.status(400).json({ error: "Invalid feature type" });
+      }
+      
+      // Get count
+      const count = await storage.getFeatureUsageCount(userId, featureType);
+      
+      return res.json({ count });
+    } catch (error) {
+      console.error("Error getting feature usage count:", error);
       return res.status(500).json({ error: "An error occurred" });
     }
   });

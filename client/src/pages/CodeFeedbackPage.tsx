@@ -56,7 +56,7 @@ export default function CodeFeedbackPage() {
       setFeedback(data.feedback);
     } catch (error) {
       console.error("Error generating feedback:", error);
-      alert(error.message || "Failed to generate feedback");
+      alert(error instanceof Error ? error.message : "Failed to generate feedback");
     } finally {
       setLoading(false);
     }

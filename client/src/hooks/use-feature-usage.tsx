@@ -1,59 +1,104 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { useAuth } from "./use-auth";
+import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
+import { useToast } from "./use-toast";
 
 type FeatureType = "explanation" | "feedback" | "project";
 
+type SaveProjectData = {
+  title: string;
+  description?: string;
+  content: string;
+};
+
 export function useFeatureUsage(featureType: FeatureType) {
+  const { user } = useAuth();
   const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
   
-  const { data: usageData, isLoading } = useQuery<{count: number}, Error>({
-    queryKey: [`/api/feature-usage/${featureType}`],
+  // Query to get usage count (only matters for non-authenticated users)
+  const { data, refetch } = useQuery<{ count: number }>({
+    queryKey: [`/api/feature-usage/${featureType}/count`],
     queryFn: getQueryFn({ on401: "returnNull" }),
+    // Only fetch for non-authenticated users
+    enabled: !user,
+    // Initialize with 0 for better UX
+    initialData: { count: 0 },
   });
   
+  // Mutation to track feature usage
   const trackUsageMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/track-usage", { featureType });
+      const res = await apiRequest(
+        "POST", 
+        `/api/feature-usage/${featureType}`,
+        {} // Empty body, we just need to track the usage
+      );
+      return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/feature-usage/${featureType}`] });
+      refetch(); // Refetch the count after tracking usage
     },
     onError: (error: Error) => {
       toast({
-        title: "Error tracking usage",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
     },
   });
   
+  // Mutation to save a project
   const saveProjectMutation = useMutation({
-    mutationFn: async ({ title, description, content }: { title: string, description: string, content: string }) => {
-      const res = await apiRequest("POST", "/api/save-project", { title, description, content });
+    mutationFn: async (projectData: SaveProjectData) => {
+      setIsSaving(true);
+      const res = await apiRequest("POST", "/api/projects", projectData);
       return await res.json();
     },
     onSuccess: () => {
       toast({
-        title: "Project saved",
-        description: "The project has been saved to your account",
+        title: "Success",
+        description: "Project saved successfully",
       });
+      setIsSaving(false);
+      // Invalidate projects query to refresh the list
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to save project",
-        description: error.message || "Please try again later",
+        title: "Error saving project",
+        description: error.message,
         variant: "destructive",
       });
+      setIsSaving(false);
     },
   });
   
+  // Function to track usage with error handling
+  const trackUsage = async () => {
+    try {
+      await trackUsageMutation.mutateAsync();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+  
+  // Function to save a project
+  const saveProject = async (projectData: SaveProjectData) => {
+    try {
+      await saveProjectMutation.mutateAsync(projectData);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+  
   return {
-    usageCount: usageData?.count || 0,
-    isLoading,
-    trackUsage: trackUsageMutation.mutate,
-    saveProject: saveProjectMutation.mutate,
-    isSaving: saveProjectMutation.isPending,
+    usageCount: data?.count || 0,
+    trackUsage,
+    saveProject,
+    isSaving,
   };
 }

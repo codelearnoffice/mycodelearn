@@ -76,7 +76,7 @@ export default function CodeExplanationPage() {
       setExplanation(data.explanation);
     } catch (error) {
       console.error("Error generating explanation:", error);
-      alert(error.message || "Failed to generate explanation");
+      alert(error instanceof Error ? error.message : "Failed to generate explanation");
     } finally {
       setLoading(false);
     }
