@@ -22,7 +22,7 @@ const EXPLANATION_TONES = [
 
 export default function CodeExplanationPage() {
   const { user } = useAuth();
-  const { usageCount, trackUsage } = useFeatureUsage("explanation");
+  const { usageCount, isAtFreeLimit, trackUsage } = useFeatureUsage("explanation");
 
   const [code, setCode] = useState("");
   const [programmingLanguage, setProgrammingLanguage] = useState("Python");

@@ -95,8 +95,12 @@ export function useFeatureUsage(featureType: FeatureType) {
     }
   };
   
+  // Check if user is at or over the free limit (3 uses)
+  const isAtFreeLimit = !user && (data?.count || 0) >= 3;
+  
   return {
     usageCount: data?.count || 0,
+    isAtFreeLimit,
     trackUsage,
     saveProject,
     isSaving,
