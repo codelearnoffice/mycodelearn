@@ -1,13 +1,26 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { LogOut, User, Folder } from "lucide-react";
 
 const Navbar = () => {
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
+  const { user, logoutMutation } = useAuth();
+  const [location] = useLocation();
 
   const toggleMobileMenu = () => {
     setMobileMenuVisible(!mobileMenuVisible);
+  };
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+    setMobileMenuVisible(false);
+  };
+
+  const isActivePath = (path: string) => {
+    return location === path;
   };
 
   return (
@@ -24,16 +37,59 @@ const Navbar = () => {
             </div>
           </div>
           <div className="hidden md:flex md:items-center md:space-x-6">
-            <a href="#features" className="text-primary hover:text-secondary text-sm font-medium transition-colors duration-200">
-              Code Explanation
-            </a>
-            <a href="#how-it-works" className="text-primary hover:text-secondary text-sm font-medium transition-colors duration-200">
-              Code Feedback
-            </a>
-            <a href="#features" className="text-primary hover:text-secondary text-sm font-medium transition-colors duration-200">
-              Project Ideas
-            </a>
-            <Button className="bg-secondary text-white hover:bg-secondary/90">Sign Up</Button>
+            <Link href="/code-explanation" className={cn(
+                "text-sm font-medium transition-colors duration-200",
+                isActivePath("/code-explanation") 
+                  ? "text-secondary font-semibold" 
+                  : "text-primary hover:text-secondary"
+              )}>
+                Code Explanation
+            </Link>
+            <Link href="/code-feedback" className={cn(
+                "text-sm font-medium transition-colors duration-200",
+                isActivePath("/code-feedback") 
+                  ? "text-secondary font-semibold" 
+                  : "text-primary hover:text-secondary"
+              )}>
+                Code Feedback
+            </Link>
+            <Link href="/project-ideas" className={cn(
+                "text-sm font-medium transition-colors duration-200",
+                isActivePath("/project-ideas") 
+                  ? "text-secondary font-semibold" 
+                  : "text-primary hover:text-secondary"
+              )}>
+                Project Ideas
+            </Link>
+            
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <Link href="/saved-projects" className={cn(
+                    "text-sm font-medium flex items-center gap-1 transition-colors duration-200",
+                    isActivePath("/saved-projects") 
+                      ? "text-secondary font-semibold" 
+                      : "text-primary hover:text-secondary"
+                  )}>
+                    <Folder size={16} />
+                    Saved Projects
+                </Link>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="flex items-center gap-1"
+                  onClick={handleLogout}
+                >
+                  <LogOut size={16} />
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <Link href="/auth">
+                <Button className="bg-secondary text-white hover:bg-secondary/90">
+                  Sign Up / Login
+                </Button>
+              </Link>
+            )}
           </div>
           <div className="flex items-center md:hidden">
             <button 
@@ -41,7 +97,11 @@ const Navbar = () => {
               className="text-primary p-2"
               onClick={toggleMobileMenu}
             >
-              <i className="fas fa-bars text-xl"></i>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
             </button>
           </div>
         </div>
@@ -49,33 +109,80 @@ const Navbar = () => {
       
       <div className={cn("md:hidden", mobileMenuVisible ? "block" : "hidden")}>
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          <a 
-            href="#features" 
-            className="block text-primary hover:text-secondary text-base font-medium p-2"
-            onClick={() => setMobileMenuVisible(false)}
-          >
-            Code Explanation
-          </a>
-          <a 
-            href="#how-it-works" 
-            className="block text-primary hover:text-secondary text-base font-medium p-2"
-            onClick={() => setMobileMenuVisible(false)}
-          >
-            Code Feedback
-          </a>
-          <a 
-            href="#features" 
-            className="block text-primary hover:text-secondary text-base font-medium p-2"
-            onClick={() => setMobileMenuVisible(false)}
-          >
-            Project Ideas
-          </a>
-          <Button 
-            className="block w-full bg-secondary text-white hover:bg-secondary/90 mt-4"
-            onClick={() => setMobileMenuVisible(false)}
-          >
-            Sign Up
-          </Button>
+          <Link href="/code-explanation">
+            <a 
+              className={cn(
+                "block text-base font-medium p-2",
+                isActivePath("/code-explanation") 
+                  ? "text-secondary font-semibold" 
+                  : "text-primary hover:text-secondary"
+              )}
+              onClick={() => setMobileMenuVisible(false)}
+            >
+              Code Explanation
+            </a>
+          </Link>
+          <Link href="/code-feedback">
+            <a 
+              className={cn(
+                "block text-base font-medium p-2",
+                isActivePath("/code-feedback") 
+                  ? "text-secondary font-semibold" 
+                  : "text-primary hover:text-secondary"
+              )}
+              onClick={() => setMobileMenuVisible(false)}
+            >
+              Code Feedback
+            </a>
+          </Link>
+          <Link href="/project-ideas">
+            <a 
+              className={cn(
+                "block text-base font-medium p-2",
+                isActivePath("/project-ideas") 
+                  ? "text-secondary font-semibold" 
+                  : "text-primary hover:text-secondary"
+              )}
+              onClick={() => setMobileMenuVisible(false)}
+            >
+              Project Ideas
+            </a>
+          </Link>
+          
+          {user ? (
+            <>
+              <Link href="/saved-projects">
+                <a 
+                  className={cn(
+                    "block text-base font-medium p-2 flex items-center gap-2",
+                    isActivePath("/saved-projects") 
+                      ? "text-secondary font-semibold" 
+                      : "text-primary hover:text-secondary"
+                  )}
+                  onClick={() => setMobileMenuVisible(false)}
+                >
+                  <Folder size={16} />
+                  Saved Projects
+                </a>
+              </Link>
+              <Button 
+                className="block w-full bg-red-500 text-white hover:bg-red-600 mt-4 flex items-center justify-center gap-2"
+                onClick={handleLogout}
+              >
+                <LogOut size={16} />
+                Logout
+              </Button>
+            </>
+          ) : (
+            <Link href="/auth">
+              <Button 
+                className="block w-full bg-secondary text-white hover:bg-secondary/90 mt-4"
+                onClick={() => setMobileMenuVisible(false)}
+              >
+                Sign Up / Login
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </nav>
