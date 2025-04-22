@@ -1,0 +1,122 @@
+import React, { useState } from 'react';
+import { toast } from 'react-toastify';
+import '../styles/ProjectGenerator.css';
+
+const SKILL_LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
+const PROGRAMMING_LANGUAGES = [
+  'Python', 'Java', 'C++', 'JavaScript', 'HTML/CSS', 'PHP', 'Ruby',
+  'Swift', 'Kotlin', 'Go', 'Rust', 'TypeScript', 'R'
+];
+const INTEREST_AREAS = [
+  'Web Development', 'Mobile Apps', 'Data Science', 'Game Development',
+  'Machine Learning', 'IoT', 'Cybersecurity', 'Desktop Applications',
+  'Cloud Computing', 'Blockchain', 'Automation'
+];
+
+export default function ProjectGenerator() {
+  const [skillLevel, setSkillLevel] = useState('Beginner');
+  const [programmingLanguage, setProgrammingLanguage] = useState('Python');
+  const [interestArea, setInterestArea] = useState('Web Development');
+  const [additionalInterests, setAdditionalInterests] = useState('');
+  const [projectIdea, setProjectIdea] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const generateIdea = async () => {
+    setLoading(true);
+    try {
+      const prompt = `Generate a unique and practical project idea for a ${skillLevel.toLowerCase()} programmer who knows ${programmingLanguage} and is interested in ${interestArea}. Additional interests: ${additionalInterests || 'None'}. Include: 1) Project title 2) Description 3) Key features 4) Learning outcomes 5) Estimated time to complete 6) Required technologies 7) Step-by-step approach`;
+
+      const response = await fetch('https://api.a0.dev/ai/llm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: 'You are a creative programming mentor.' },
+            { role: 'user', content: prompt }
+          ]
+        })
+      });
+
+      const data = await response.json();
+      setProjectIdea(data.completion);
+      toast.success('Project idea generated!');
+    } catch (error) {
+      toast.error('Failed to generate project idea');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="project-generator-container">
+      <div className="scroll-view">
+        <h1 className="title">Project Idea Generator</h1>
+        
+        <div className="picker-container">
+          <label className="label">Skill Level:</label>
+          <select
+            className="select"
+            value={skillLevel}
+            onChange={(e) => setSkillLevel(e.target.value)}
+          >
+            {SKILL_LEVELS.map((level) => (
+              <option key={level} value={level}>{level}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="picker-container">
+          <label className="label">Programming Language:</label>
+          <select
+            className="select"
+            value={programmingLanguage}
+            onChange={(e) => setProgrammingLanguage(e.target.value)}
+          >
+            {PROGRAMMING_LANGUAGES.map((lang) => (
+              <option key={lang} value={lang}>{lang}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="picker-container">
+          <label className="label">Area of Interest:</label>
+          <select
+            className="select"
+            value={interestArea}
+            onChange={(e) => setInterestArea(e.target.value)}
+          >
+            {INTEREST_AREAS.map((area) => (
+              <option key={area} value={area}>{area}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="picker-container">
+          <label className="label">Additional Interests or Requirements:</label>
+          <textarea
+            className="text-input"
+            value={additionalInterests}
+            onChange={(e) => setAdditionalInterests(e.target.value)}
+            placeholder="Enter any specific interests, requirements, or preferences..."
+            rows={4}
+          />
+        </div>
+
+        <button 
+          className={`button ${loading ? 'button-disabled' : ''}`}
+          onClick={generateIdea}
+          disabled={loading}
+        >
+          {loading ? 'Generating...' : 'Generate Project Idea'}
+        </button>
+
+        {projectIdea && (
+          <div className="idea-container">
+            <h2 className="idea-title">Your Personalized Project Idea:</h2>
+            <div className="idea-text">{projectIdea}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+} 

@@ -1,0 +1,182 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import '../styles/CodeExplanationScreen.css';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+const PROGRAMMING_LANGUAGES = [
+  'Python', 'Java', 'C++', 'JavaScript', 'HTML/CSS', 'PHP', 'Ruby',
+  'Swift', 'Kotlin', 'Go', 'Rust', 'TypeScript', 'R'
+];
+
+const EXPLANATION_LANGUAGES = [
+  'English', 'Hindi', 'Telugu', 'Tamil', 'Bengali', 
+  'Marathi', 'Gujarati', 'Kannada', 'Malayalam'
+];
+
+const EXPLANATION_TONES = [
+  'Professional', 'Friendly', 'Simple (13-year-old)', 
+  'Technical', 'Casual', 'Teacher-like'
+];
+
+export default function CodeExplanationScreen() {
+  const navigate = useNavigate();
+  const [subscriptionPlan, setSubscriptionPlan] = useState('free');
+  const [dailyExplanations, setDailyExplanations] = useState(0);
+  const [code, setCode] = useState('');
+  const [programmingLanguage, setProgrammingLanguage] = useState('Python');
+  const [explanationLanguage, setExplanationLanguage] = useState('English');
+  const [explanationTone, setExplanationTone] = useState('Professional');
+  const [explanation, setExplanation] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const checkSubscription = () => {
+      const plan = localStorage.getItem('subscriptionPlan');
+      setSubscriptionPlan(plan || 'free');
+      
+      if (plan !== 'premium') {
+        const today = new Date().toDateString();
+        const usageData = localStorage.getItem('explanationUsage');
+        const usage = usageData ? JSON.parse(usageData) : {};
+        
+        if (usage.date === today) {
+          setDailyExplanations(usage.count || 0);
+        } else {
+          localStorage.setItem('explanationUsage', JSON.stringify({
+            date: today,
+            count: 0
+          }));
+          setDailyExplanations(0);
+        }
+      }
+    };
+    checkSubscription();
+  }, []);
+
+  const getExplanation = async () => {
+    if (!code.trim()) {
+      toast.error('Please enter some code to explain');
+      return;
+    }
+
+    if (subscriptionPlan !== 'premium' && dailyExplanations >= 3) {
+      toast.error('Free plan limited to 3 explanations per day');
+      navigate('/subscription');
+      return;
+    }
+
+    if (subscriptionPlan !== 'premium' && explanationLanguage !== 'English') {
+      toast.error('Multiple languages only available in Premium plan');
+      navigate('/subscription');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const prompt = `As a ${explanationTone.toLowerCase()} programming teacher, explain this ${programmingLanguage} code in ${explanationLanguage}. Focus on clear, direct explanations for each line. Here's the code:\n\n${code}`;
+
+      const response = await fetch('https://api.a0.dev/ai/llm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: 'You are a helpful programming teacher.' },
+            { role: 'user', content: prompt }
+          ]
+        })
+      });
+
+      const data = await response.json();
+      setExplanation(data.completion);
+      toast.success('Code explanation generated!');
+      
+      if (subscriptionPlan !== 'premium') {
+        const today = new Date().toDateString();
+        const newCount = dailyExplanations + 1;
+        localStorage.setItem('explanationUsage', JSON.stringify({
+          date: today,
+          count: newCount
+        }));
+        setDailyExplanations(newCount);
+      }
+    } catch (error) {
+      toast.error('Failed to generate explanation');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="code-explanation-container">
+      <div className="content">
+        <h1 className="title">Code Explanation Tool</h1>
+        
+        <div className="select-container">
+          <label className="label">Programming Language:</label>
+          <select
+            value={programmingLanguage}
+            onChange={(e) => setProgrammingLanguage(e.target.value)}
+            className="select"
+          >
+            {PROGRAMMING_LANGUAGES.map((lang) => (
+              <option key={lang} value={lang}>{lang}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="select-container">
+          <label className="label">Explanation Tone:</label>
+          <select
+            value={explanationTone}
+            onChange={(e) => setExplanationTone(e.target.value)}
+            className="select"
+          >
+            {EXPLANATION_TONES.map((tone) => (
+              <option key={tone} value={tone}>{tone}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="select-container">
+          <label className="label">Explanation Language:</label>
+          <select
+            value={explanationLanguage}
+            onChange={(e) => setExplanationLanguage(e.target.value)}
+            className="select"
+          >
+            {EXPLANATION_LANGUAGES.map((lang) => (
+              <option key={lang} value={lang}>{lang}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="code-input-container">
+          <label className="label">Your Code:</label>
+          <textarea
+            className="code-input"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            placeholder="Paste your code here..."
+            rows={10}
+          />
+        </div>
+
+        <button 
+          className={`button ${loading ? 'button-disabled' : ''}`}
+          onClick={getExplanation}
+          disabled={loading}
+        >
+          {loading ? 'Generating...' : 'Explain Code'}
+        </button>
+
+        {explanation && (
+          <div className="explanation-container">
+            <h2 className="explanation-title">Explanation:</h2>
+            <div className="explanation-text">{explanation}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+} 
