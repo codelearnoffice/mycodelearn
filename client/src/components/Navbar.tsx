@@ -18,20 +18,20 @@ const Navbar = () => {
             <div className="flex-shrink-0 flex items-center">
               <Link href="/">
                 <span className="text-2xl font-bold text-primary cursor-pointer">
-                  Code<span className="text-secondary">Buddy</span>
+                  Code<span className="text-secondary">Learn</span>
                 </span>
               </Link>
             </div>
           </div>
           <div className="hidden md:flex md:items-center md:space-x-6">
             <a href="#features" className="text-primary hover:text-secondary text-sm font-medium transition-colors duration-200">
-              Features
+              Code Explanation
             </a>
             <a href="#how-it-works" className="text-primary hover:text-secondary text-sm font-medium transition-colors duration-200">
-              How It Works
+              Code Feedback
             </a>
-            <a href="#pricing" className="text-primary hover:text-secondary text-sm font-medium transition-colors duration-200">
-              Pricing
+            <a href="#features" className="text-primary hover:text-secondary text-sm font-medium transition-colors duration-200">
+              Project Ideas
             </a>
             <Button className="bg-secondary text-white hover:bg-secondary/90">Sign Up</Button>
           </div>
@@ -54,21 +54,21 @@ const Navbar = () => {
             className="block text-primary hover:text-secondary text-base font-medium p-2"
             onClick={() => setMobileMenuVisible(false)}
           >
-            Features
+            Code Explanation
           </a>
           <a 
             href="#how-it-works" 
             className="block text-primary hover:text-secondary text-base font-medium p-2"
             onClick={() => setMobileMenuVisible(false)}
           >
-            How It Works
+            Code Feedback
           </a>
           <a 
-            href="#pricing" 
+            href="#features" 
             className="block text-primary hover:text-secondary text-base font-medium p-2"
             onClick={() => setMobileMenuVisible(false)}
           >
-            Pricing
+            Project Ideas
           </a>
           <Button 
             className="block w-full bg-secondary text-white hover:bg-secondary/90 mt-4"

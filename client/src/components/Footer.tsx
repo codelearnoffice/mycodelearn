@@ -12,7 +12,7 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="text-2xl font-bold">
-              Code<span className="text-secondary">Buddy</span>
+              Code<span className="text-secondary">Learn</span>
             </div>
             <p className="mt-4 text-gray-400">
               Making coding education accessible, understandable, and enjoyable for students worldwide.
@@ -39,7 +39,7 @@ const Footer: React.FC = () => {
               <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Code Explainer</a></li>
               <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Error Translator</a></li>
               <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Project Generator</a></li>
-              <li><a href="#pricing" className="text-gray-400 hover:text-white transition-colors duration-200">Pricing</a></li>
+
             </ul>
           </div>
           
@@ -65,7 +65,7 @@ const Footer: React.FC = () => {
         </div>
         
         <div className="mt-12 pt-8 border-t border-gray-800 text-center text-gray-400">
-          <p>&copy; {new Date().getFullYear()} CodeBuddy. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} CodeLearn. All rights reserved.</p>
         </div>
       </div>
     </footer>

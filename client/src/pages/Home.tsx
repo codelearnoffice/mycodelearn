@@ -6,9 +6,8 @@ import CodeBlock from "@/components/CodeBlock";
 import FeatureCard from "@/components/FeatureCard";
 import HowItWorksStep from "@/components/HowItWorksStep";
 import TestimonialCard from "@/components/TestimonialCard";
-import PricingCard from "@/components/PricingCard";
 import Footer from "@/components/Footer";
-import { features, steps, testimonials, pricingPlans } from "@/lib/utils";
+import { features, steps, testimonials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
 const Home = () => {
@@ -132,7 +131,7 @@ const Home = () => {
               What Students Say
             </h2>
             <p className="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">
-              Join thousands of students who are accelerating their coding journey with CodeBuddy
+              Join thousands of students who are accelerating their coding journey with CodeLearn
             </p>
           </div>
           
@@ -144,25 +143,7 @@ const Home = () => {
         </div>
       </section>
       
-      {/* Pricing Section */}
-      <section id="pricing" className="py-16 px-4 sm:px-6 lg:px-8 bg-neutral">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold text-primary">
-              Simple, Flexible Pricing
-            </h2>
-            <p className="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">
-              Start for free and upgrade as your needs grow
-            </p>
-          </div>
-          
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan, index) => (
-              <PricingCard key={index} {...plan} />
-            ))}
-          </div>
-        </div>
-      </section>
+
       
       {/* CTA Section */}
       <section className="gradient-bg text-white py-16 px-4 sm:px-6 lg:px-8">
