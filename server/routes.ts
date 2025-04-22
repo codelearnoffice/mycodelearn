@@ -3,8 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { db } from "./db";
-import { earlyAccessSignups, insertEarlyAccessSignupSchema } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { earlyAccessSignups, insertEarlyAccessSignupSchema, User } from "@shared/schema";
+import { eq, sql } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
@@ -53,7 +53,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/early-access/count", async (req, res) => {
     try {
       const [result] = await db
-        .select({ count: db.fn.count() })
+        .select({ count: sql<number>`count(*)` })
         .from(earlyAccessSignups);
       
       return res.json({ count: Number(result.count) });

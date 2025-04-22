@@ -24,11 +24,11 @@ export interface IStorage {
   getUserProjects(userId: number): Promise<SavedProject[]>;
   
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: any; // Using any to avoid type conflicts
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: any; // Using any to avoid type conflicts
   
   constructor() {
     this.sessionStore = new PostgresSessionStore({

@@ -15,6 +15,9 @@ declare global {
   }
 }
 
+// For easier referencing of the User type
+type User = UserType;
+
 const scryptAsync = promisify(scrypt);
 
 async function hashPassword(password: string) {
@@ -129,7 +132,7 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) {
         return next(err);
       }
