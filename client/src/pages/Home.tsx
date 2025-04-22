@@ -55,7 +55,7 @@ const Home = () => {
                   size="lg" 
                   className="bg-secondary text-white hover:bg-secondary/90"
                 >
-                  Try For Free
+                  <a href="/auth">Try For Free</a>
                 </Button>
                 <Button 
                   size="lg" 

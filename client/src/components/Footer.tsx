@@ -36,30 +36,27 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4">Product</h3>
             <ul className="space-y-2">
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Code Explainer</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Error Translator</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Project Generator</a></li>
-
+              <li><a href="/code-explanation" className="text-gray-400 hover:text-white transition-colors duration-200">Code Explainer</a></li>
+              <li><a href="/code-feedback" className="text-gray-400 hover:text-white transition-colors duration-200">Error Translator</a></li>
+              <li><a href="/project-ideas" className="text-gray-400 hover:text-white transition-colors duration-200">Project Generator</a></li>
             </ul>
           </div>
           
           <div>
             <h3 className="text-lg font-semibold mb-4">Resources</h3>
             <ul className="space-y-2">
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Documentation</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Tutorials</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Blog</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Support</a></li>
+              <li><a href="/documentation" className="text-gray-400 hover:text-white transition-colors duration-200">Documentation</a></li>
+              <li><a href="/tutorials" className="text-gray-400 hover:text-white transition-colors duration-200">Tutorials</a></li>
+              <li><a href="/support" className="text-gray-400 hover:text-white transition-colors duration-200">Support</a></li>
             </ul>
           </div>
           
           <div>
             <h3 className="text-lg font-semibold mb-4">Company</h3>
             <ul className="space-y-2">
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">About Us</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Careers</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Contact</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors duration-200">Privacy Policy</a></li>
+              <li><a href="/about" className="text-gray-400 hover:text-white transition-colors duration-200">About Us</a></li>
+              <li><a href="/contact" className="text-gray-400 hover:text-white transition-colors duration-200">Contact</a></li>
+              <li><a href="/privacy" className="text-gray-400 hover:text-white transition-colors duration-200">Privacy Policy</a></li>
             </ul>
           </div>
         </div>

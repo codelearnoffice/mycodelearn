@@ -42,7 +42,9 @@ export default function ProjectIdeasPage() {
       // Track usage first
       await trackUsage();
       
-      // Make API request
+      // Make API request to get a project idea
+      const prompt = `Generate a unique and practical project idea for a ${skillLevel.toLowerCase()} programmer who knows ${programmingLanguage} and is interested in ${interestArea}. Additional interests: ${additionalInterests || 'None'}. Include: 1) Project title 2) Description 3) Key features 4) Learning outcomes 5) Estimated time to complete 6) Required technologies 7) Step-by-step approach`;
+
       const response = await fetch("/api/project-ideas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -50,7 +52,8 @@ export default function ProjectIdeasPage() {
           skillLevel,
           programmingLanguage,
           interestArea,
-          additionalInterests
+          additionalInterests,
+          prompt
         })
       });
 

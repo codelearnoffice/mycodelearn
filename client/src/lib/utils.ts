@@ -12,7 +12,7 @@ export const features = [
     icon: "code",
     color: "secondary",
     codeExample: "for i in range(10): # Loops from 0 to 9",
-    link: "#"
+    link: "/code-explanation"
   },
   {
     title: "Error Translator",
@@ -21,7 +21,7 @@ export const features = [
     color: "error",
     errorMessage: "TypeError: 'int' object is not iterable",
     errorExplanation: "You're trying to loop through a number, but you can only loop through collections like lists.",
-    link: "#"
+    link: "/code-feedback"
   },
   {
     title: "Project Generator",
@@ -29,7 +29,7 @@ export const features = [
     icon: "lightbulb",
     color: "accent",
     projectExample: "Beginner Python Project: Build a personal expense tracker with data visualization",
-    link: "#"
+    link: "/project-ideas"
   }
 ];
 
