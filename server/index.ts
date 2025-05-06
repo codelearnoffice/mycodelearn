@@ -1,17 +1,16 @@
-import { pool } from './db'; // Make sure this import is at the top
 import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cors from "cors";
 import { AuthService } from './auth-service';
-import { initDb } from './db';
+import { initDb } from './postgres-db';
 import cookieParser from "cookie-parser";
 // Initialize the database
 initDb().then(() => {
-  log('MySQL database initialized successfully');
+  log('PostgreSQL database initialized successfully');
 }).catch(err => {
-  console.error('Error initializing MySQL database:', err);
+  console.error('Error initializing PostgreSQL database:', err);
   process.exit(1);
 });
 
@@ -20,7 +19,7 @@ app.use(cookieParser());
 
 // Configure CORS
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5000'], // Allow both Vite dev server and production server
+  origin: ['http://localhost:5173', 'https://simplecodr.vercel.app/'], // Allow both Vite dev server and production server
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
