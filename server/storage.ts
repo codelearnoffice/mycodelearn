@@ -1,155 +1,103 @@
-import { users, featureUsage, savedProjects, type User, type InsertUser, type FeatureUsage, type SavedProject, type InsertSavedProject } from "@shared/schema";
-import { db } from "./db";
-import { eq, and, isNull, sql } from "drizzle-orm";
-import connectPg from "connect-pg-simple";
-import session from "express-session";
-import { pool } from "./db";
+import { pool } from './db';
+import session from 'express-session';
+import MemoryStore from 'memorystore';
 
-// Session store for PostgreSQL
-const PostgresSessionStore = connectPg(session);
+const MemoryStoreSession = MemoryStore(session);
+
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  full_name?: string;
+  profession?: string;
+}
 
 export interface IStorage {
   // User management
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  
-  // Feature usage tracking
-  trackFeatureUsage(userId: number | null, featureType: string): Promise<void>;
-  getFeatureUsageCount(userId: number | null, featureType: string): Promise<number>;
-  
-  // Project management
-  saveProject(project: InsertSavedProject): Promise<SavedProject>;
-  getUserProjects(userId: number): Promise<SavedProject[]>;
-  
+  createUser(user: any): Promise<User>;
+
   // Session store
-  sessionStore: any; // Using any to avoid type conflicts
+  sessionStore: any;
+
+  // Feature usage
+  trackFeatureUsage(userId: number, featureType: string): Promise<void>;
+  getFeatureUsageCount(userId: number, featureType: string): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: any; // Using any to avoid type conflicts
-  
+  public pool = pool;
+  // Save a new project for a user
+  async saveProject({ userId, title, description, content }: { userId: number; title: string; description?: string; content: string; }) {
+    const [result]: any = await pool.execute(
+      'INSERT INTO projects (user_id, title, description, content) VALUES (?, ?, ?, ?)',
+      [userId, title, description || '', content]
+    );
+    const id = result.insertId;
+    // Return the saved project
+    return {
+      id,
+      user_id: userId,
+      title,
+      description: description || '',
+      content
+    };
+  }
+  sessionStore: any;
+
   constructor() {
-    this.sessionStore = new PostgresSessionStore({
-      pool,
-      createTableIfMissing: true
+    this.sessionStore = new MemoryStoreSession({
+      checkPeriod: 86400000 // prune expired entries every 24h
     });
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    const [rows] = await pool.execute('SELECT * FROM users WHERE id = ?', [id]);
+    return (rows as any[])[0];
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
-  }
-  
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
+    const [rows] = await pool.execute('SELECT * FROM users WHERE username = ?', [username]);
+    return (rows as any[])[0];
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [rows] = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
+    return (rows as any[])[0];
   }
-  
-  async trackFeatureUsage(userId: number | null, featureType: string): Promise<void> {
-    if (userId) {
-      // For logged-in users, update their usage count
-      const [existingUsage] = await db
-        .select()
-        .from(featureUsage)
-        .where(
-          and(
-            eq(featureUsage.userId, userId),
-            eq(featureUsage.featureType, featureType)
-          )
-        );
-      
-      if (existingUsage) {
-        await db
-          .update(featureUsage)
-          .set({
-            usageCount: existingUsage.usageCount + 1,
-            lastUsedAt: new Date()
-          })
-          .where(eq(featureUsage.id, existingUsage.id));
-      } else {
-        await db
-          .insert(featureUsage)
-          .values({
-            userId,
-            featureType,
-            usageCount: 1,
-            lastUsedAt: new Date()
-          });
-      }
-    } else {
-      // For anonymous users, just insert with null userId
-      await db
-        .insert(featureUsage)
-        .values({
-          userId: null,
-          featureType,
-          usageCount: 1,
-          lastUsedAt: new Date()
-        });
-    }
+
+  async createUser(userData: any): Promise<User> {
+    const { username, email, password, full_name, phone_number, profession, referral_source } = userData;
+
+    const [result] = await pool.execute(
+      'INSERT INTO users (username, email, password, full_name, phone_number, profession, referral_source) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [username, email, password, full_name, phone_number, profession, referral_source]
+    );
+
+    const id = (result as any).insertId;
+    return this.getUser(id) as Promise<User>;
   }
-  
-  async getFeatureUsageCount(userId: number | null, featureType: string): Promise<number> {
-    if (userId) {
-      // For logged-in users, get their usage count
-      const [result] = await db
-        .select({
-          count: sql<number>`sum(${featureUsage.usageCount})`
-        })
-        .from(featureUsage)
-        .where(
-          and(
-            eq(featureUsage.userId, userId),
-            eq(featureUsage.featureType, featureType)
-          )
-        );
-      
-      return result?.count || 0;
-    } else {
-      // For anonymous users, count all anonymous usage with the IP
-      const [result] = await db
-        .select({
-          count: sql<number>`count(*)`
-        })
-        .from(featureUsage)
-        .where(
-          and(
-            isNull(featureUsage.userId),
-            eq(featureUsage.featureType, featureType)
-          )
-        );
-      
-      return result?.count || 0;
-    }
+
+  async getUserProjects(userId: number) {
+    const [rows] = await pool.execute("SELECT * FROM projects WHERE user_id = ?", [userId]);
+    return rows;
   }
-  
-  async saveProject(project: InsertSavedProject): Promise<SavedProject> {
-    const [savedProject] = await db
-      .insert(savedProjects)
-      .values(project)
-      .returning();
-    
-    return savedProject;
+
+  async trackFeatureUsage(userId: number, featureType: string) {
+    await pool.execute(
+      "INSERT INTO feature_usage (user_id, feature_type, used_at) VALUES (?, ?, NOW())",
+      [userId, featureType]
+    );
   }
-  
-  async getUserProjects(userId: number): Promise<SavedProject[]> {
-    return db
-      .select()
-      .from(savedProjects)
-      .where(eq(savedProjects.userId, userId))
-      .orderBy(sql`${savedProjects.createdAt} DESC`);
+
+  async getFeatureUsageCount(userId: number, featureType: string): Promise<number> {
+    const [rows]: any = await pool.execute(
+      "SELECT COUNT(*) as count FROM feature_usage WHERE user_id = ? AND feature_type = ?",
+      [userId, featureType]
+    );
+    return rows[0]?.count || 0;
   }
 }
 

@@ -1,8 +1,10 @@
 import { useState } from "react";
+import Navbar from "@/components/Navbar";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { Copy, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import "@/styles/CodeEditor.css";
 
 const PROGRAMMING_LANGUAGES = [
@@ -13,6 +15,7 @@ const PROGRAMMING_LANGUAGES = [
 export default function CodeFeedbackPage() {
   const { user } = useAuth();
   const { usageCount, trackUsage } = useFeatureUsage("feedback");
+  const { toast } = useToast();
   
   const [code, setCode] = useState("");
   const [programmingLanguage, setProgrammingLanguage] = useState("Python");
@@ -22,7 +25,11 @@ export default function CodeFeedbackPage() {
 
   const analyzeCode = async () => {
     if (!code.trim()) {
-      alert("Please enter some code to analyze");
+      toast({
+        title: "Error",
+        description: "Please enter some code to analyze",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -37,26 +44,52 @@ export default function CodeFeedbackPage() {
       // Track usage first
       await trackUsage();
       
-      // Make API request
-      const response = await fetch("/api/code-feedback", {
+      const prompt = `Act as a ${programmingLanguage} code interpreter and error checker. Here's the code:\n\n${code}\n\nIf there are any errors, explain them in simple terms and suggest fixes. If the code is correct, show the expected output.`;
+
+      const response = await fetch('https://api.a0.dev/ai/llm', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          code,
-          programmingLanguage
+          messages: [
+            { role: 'system', content: 'You are a helpful programming interpreter.' },
+            { role: 'user', content: prompt }
+          ]
         })
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to generate feedback");
+        let errorMessage = "Failed to generate feedback";
+        try {
+          const error = await response.json();
+          errorMessage = error?.message || errorMessage;
+        } catch (_) {
+          // If response is not JSON, keep the default message
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
-      setFeedback(data.feedback);
+      console.log("API Response:", data); // Debug log
+      
+      // Handle different API response formats
+      const feedbackText = data.completion || data.feedback || data.content || data.result || data.output || "";
+      
+      if (!feedbackText) {
+        console.warn("No feedback text found in API response:", data);
+      }
+      
+      setFeedback(feedbackText);
+      toast({
+        title: "Success",
+        description: "Code analyzed successfully!",
+      });
     } catch (error) {
       console.error("Error generating feedback:", error);
-      alert(error instanceof Error ? error.message : "Failed to generate feedback");
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to generate feedback",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -69,14 +102,27 @@ export default function CodeFeedbackPage() {
     }
 
     navigator.clipboard.writeText(feedback)
-      .then(() => alert("Feedback copied to clipboard!"))
-      .catch(err => console.error("Failed to copy: ", err));
+      .then(() => {
+        toast({
+          title: "Copied",
+          description: "Feedback copied to clipboard!"
+        });
+      })
+      .catch(err => {
+        console.error("Failed to copy: ", err);
+        toast({
+          title: "Error",
+          description: "Failed to copy to clipboard",
+          variant: "destructive"
+        });
+      });
   };
 
   return (
-    <div className="code-editor-container">
-      <div className="scroll-view">
-        <h1 className="title">Code Feedback Tool</h1>
+    <div className="bg-background" style={{ minHeight: '100vh', paddingBottom: '32px' }}>
+      <Navbar />
+      <div style={{ width: '100%', maxWidth: 900, margin: '0 auto', padding: 24, paddingTop: '110px' }}>
+        <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 24 }}>Code Feedback Tool</h1>
         
         <div className="picker-container">
           <label className="label">Programming Language:</label>
@@ -92,12 +138,12 @@ export default function CodeFeedbackPage() {
         </div>
 
         <div className="picker-container">
-          <label className="label">Your Code:</label>
+          <label className="label">Code Editor:</label>
           <textarea
             className="code-input"
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            placeholder="Paste your code here for analysis and error checking..."
+            placeholder="Write your code here for analysis and error checking..."
             rows={15}
             spellCheck={false}
           />
@@ -116,7 +162,7 @@ export default function CodeFeedbackPage() {
         >
           {loading ? (
             <>
-              <div className="spinner" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               <span>Analyzing...</span>
             </>
           ) : (
@@ -126,28 +172,29 @@ export default function CodeFeedbackPage() {
 
         {feedback && (
           <div className="output-container">
-            <h2 className="output-title">Analysis & Feedback:</h2>
+            <div className="explanation-header">
+              <h2 className="output-title">Analysis & Feedback:</h2>
+              <button 
+                className="copy-button" 
+                onClick={handleCopy}
+                title="Copy to clipboard"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+            </div>
             <div className="output-text">{feedback}</div>
-            <button 
-              className="copy-button" 
-              onClick={handleCopy}
-            >
-              <Copy size={16} />
-              Copy Feedback
-            </button>
           </div>
         )}
 
         {showLoginPrompt && (
           <div className="login-prompt">
-            <h3 className="login-prompt-title">Create an Account</h3>
-            <p className="login-prompt-text">
+            <p>
               {!user && usageCount >= 3 
-                ? "You've reached the limit of free analyses. Create an account to continue using this feature."
-                : "Please create an account to copy feedback and access more features."}
+                ? "You've reached the limit of free analyses. Sign in to continue using this feature."
+                : "Please sign in to copy feedback and access more features."}
             </p>
-            <Link href="/auth" className="login-button">
-              Sign Up / Login
+            <Link to="/auth" className="login-button">
+              Sign In
             </Link>
           </div>
         )}

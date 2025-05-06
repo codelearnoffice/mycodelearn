@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, LoginData, RegisterData } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
 const REFERRAL_SOURCES = [
   "Google Search",
@@ -14,77 +14,149 @@ const REFERRAL_SOURCES = [
 ];
 
 export default function AuthPage() {
-  const { user, loginMutation, registerMutation } = useAuth();
+  const { user, isLoading, isAuthenticated, login, register } = useAuth();
   const [isLoginView, setIsLoginView] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   
-  // Login form state
-  const [loginUsername, setLoginUsername] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  
-  // Register form state
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [profession, setProfession] = useState("");
-  const [referralSource, setReferralSource] = useState(REFERRAL_SOURCES[0]);
+  // Form state
+  const [formData, setFormData] = useState({
+    // Login form
+    loginUsername: "",
+    loginPassword: "",
+    
+    // Register form
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    fullName: "",
+    phoneNumber: "",
+    profession: "",
+    referralSource: REFERRAL_SOURCES[0]
+  });
   
   // If the user is already logged in, redirect to the home page
-  if (user) {
+  if (isAuthenticated && user) {
     return <Redirect to="/" />;
   }
   
+  // Handle input changes
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error for this field
+    if (formErrors[name]) {
+      setFormErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+  
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    const { loginUsername, loginPassword } = formData;
+    const errors: Record<string, string> = {};
     
-    if (!loginUsername || !loginPassword) {
-      alert("Please enter both username and password");
+    // Validate form
+    if (!loginUsername) errors.loginUsername = "Username is required";
+    if (!loginPassword) errors.loginPassword = "Password is required";
+    
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       return;
     }
     
-    loginMutation.mutate({
-      username: loginUsername,
-      password: loginPassword
-    });
+    try {
+      const loginData: LoginData = {
+        username: loginUsername,
+        password: loginPassword
+      };
+      
+      await login(loginData);
+    } catch (error) {
+      console.error("Login error:", error);
+    }
   };
   
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!username || !email || !password || !confirmPassword || !fullName || !phoneNumber || !profession) {
-      alert("Please fill in all required fields");
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
-    
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      alert("Please enter a valid email address");
-      return;
-    }
-    
-    // Phone validation (simple check for minimum length)
-    if (phoneNumber.length < 10) {
-      alert("Please enter a valid phone number");
-      return;
-    }
-    
-    registerMutation.mutate({
+    const {
       username,
       email,
       password,
+      confirmPassword,
       fullName,
       phoneNumber,
       profession,
       referralSource
-    });
+    } = formData;
+    
+    const errors: Record<string, string> = {};
+    
+    // Validate form
+    if (!username) {
+      errors.username = "Username is required";
+    } else if (username.length < 3) {
+      errors.username = "Username must be at least 3 characters";
+    }
+    
+    if (!email) {
+      errors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = "Please enter a valid email address";
+    }
+    
+    if (!password) {
+      errors.password = "Password is required";
+    } else if (password.length < 6) {
+      errors.password = "Password must be at least 6 characters";
+    }
+    
+    if (!confirmPassword) {
+      errors.confirmPassword = "Please confirm your password";
+    } else if (password !== confirmPassword) {
+      errors.confirmPassword = "Passwords do not match";
+    }
+    
+    // Add validation for the newly required fields
+    if (!fullName) {
+      errors.fullName = "Full name is required";
+    }
+    
+    if (!phoneNumber) {
+      errors.phoneNumber = "Phone number is required";
+    } else if (!/^\d{10}$/.test(phoneNumber.replace(/[\s-]/g, ''))) {
+      errors.phoneNumber = "Please enter a valid 10-digit phone number";
+    }
+    
+    if (!profession) {
+      errors.profession = "Profession is required";
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    
+    try {
+      const registerData: RegisterData = {
+        username,
+        email,
+        password,
+        fullName,
+        phoneNumber,
+        profession,
+        referralSource: referralSource || undefined
+      };
+      
+      await register(registerData);
+    } catch (error) {
+      console.error("Registration error:", error);
+    }
   };
   
   return (
@@ -102,7 +174,10 @@ export default function AuthPage() {
                   Or{" "}
                   <button 
                     className="font-medium text-primary hover:text-primary/80"
-                    onClick={() => setIsLoginView(false)}
+                    onClick={() => {
+                      setIsLoginView(false);
+                      setFormErrors({});
+                    }}
                   >
                     create a new account
                   </button>
@@ -112,7 +187,10 @@ export default function AuthPage() {
                   Already have an account?{" "}
                   <button 
                     className="font-medium text-primary hover:text-primary/80"
-                    onClick={() => setIsLoginView(true)}
+                    onClick={() => {
+                      setIsLoginView(true);
+                      setFormErrors({});
+                    }}
                   >
                     Sign in
                   </button>
@@ -124,48 +202,67 @@ export default function AuthPage() {
           {isLoginView ? (
             <form onSubmit={handleLogin} className="space-y-6">
               <div>
-                <label htmlFor="login-username" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="loginUsername" className="block text-sm font-medium text-gray-700">
                   Username or Email
                 </label>
                 <div className="mt-1">
                   <input
-                    id="login-username"
-                    name="username"
+                    id="loginUsername"
+                    name="loginUsername"
                     type="text"
                     autoComplete="username"
-                    required
-                    value={loginUsername}
-                    onChange={(e) => setLoginUsername(e.target.value)}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                    value={formData.loginUsername}
+                    onChange={handleChange}
+                    className={`appearance-none block w-full px-3 py-2 border ${
+                      formErrors.loginUsername ? 'border-red-500' : 'border-gray-300'
+                    } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm`}
                   />
+                  {formErrors.loginUsername && (
+                    <p className="mt-1 text-sm text-red-600">{formErrors.loginUsername}</p>
+                  )}
                 </div>
               </div>
               
               <div>
-                <label htmlFor="login-password" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="loginPassword" className="block text-sm font-medium text-gray-700">
                   Password
                 </label>
-                <div className="mt-1">
+                <div className="mt-1 relative">
                   <input
-                    id="login-password"
-                    name="password"
-                    type="password"
+                    id="loginPassword"
+                    name="loginPassword"
+                    type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
-                    required
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                    value={formData.loginPassword}
+                    onChange={handleChange}
+                    className={`appearance-none block w-full px-3 py-2 border ${
+                      formErrors.loginPassword ? 'border-red-500' : 'border-gray-300'
+                    } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm pr-10`}
                   />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5 text-gray-400" />
+                    ) : (
+                      <Eye className="h-5 w-5 text-gray-400" />
+                    )}
+                  </button>
+                  {formErrors.loginPassword && (
+                    <p className="mt-1 text-sm text-red-600">{formErrors.loginPassword}</p>
+                  )}
                 </div>
               </div>
               
               <div>
                 <button
                   type="submit"
-                  disabled={loginMutation.isPending}
+                  disabled={isLoading}
                   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-70"
                 >
-                  {loginMutation.isPending ? (
+                  {isLoading ? (
                     <>
                       <Loader2 className="animate-spin h-4 w-4 mr-2" />
                       Signing in...
@@ -189,11 +286,15 @@ export default function AuthPage() {
                       name="username"
                       type="text"
                       autoComplete="username"
-                      required
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                      value={formData.username}
+                      onChange={handleChange}
+                      className={`appearance-none block w-full px-3 py-2 border ${
+                        formErrors.username ? 'border-red-500' : 'border-gray-300'
+                      } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm`}
                     />
+                    {formErrors.username && (
+                      <p className="mt-1 text-sm text-red-600">{formErrors.username}</p>
+                    )}
                   </div>
                 </div>
                 
@@ -207,11 +308,15 @@ export default function AuthPage() {
                       name="email"
                       type="email"
                       autoComplete="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className={`appearance-none block w-full px-3 py-2 border ${
+                        formErrors.email ? 'border-red-500' : 'border-gray-300'
+                      } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm`}
                     />
+                    {formErrors.email && (
+                      <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>
+                    )}
                   </div>
                 </div>
                 
@@ -219,71 +324,98 @@ export default function AuthPage() {
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                     Password*
                   </label>
-                  <div className="mt-1">
+                  <div className="mt-1 relative">
                     <input
                       id="password"
                       name="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       autoComplete="new-password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                      value={formData.password}
+                      onChange={handleChange}
+                      className={`appearance-none block w-full px-3 py-2 border ${
+                        formErrors.password ? 'border-red-500' : 'border-gray-300'
+                      } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm pr-10`}
                     />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5 text-gray-400" />
+                      ) : (
+                        <Eye className="h-5 w-5 text-gray-400" />
+                      )}
+                    </button>
+                    {formErrors.password && (
+                      <p className="mt-1 text-sm text-red-600">{formErrors.password}</p>
+                    )}
                   </div>
                 </div>
                 
                 <div>
-                  <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
                     Confirm Password*
                   </label>
                   <div className="mt-1">
                     <input
-                      id="confirm-password"
-                      name="confirm-password"
-                      type="password"
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type={showPassword ? "text" : "password"}
                       autoComplete="new-password"
-                      required
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      className={`appearance-none block w-full px-3 py-2 border ${
+                        formErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                      } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm`}
                     />
+                    {formErrors.confirmPassword && (
+                      <p className="mt-1 text-sm text-red-600">{formErrors.confirmPassword}</p>
+                    )}
                   </div>
                 </div>
                 
                 <div>
-                  <label htmlFor="full-name" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
                     Full Name*
                   </label>
                   <div className="mt-1">
                     <input
-                      id="full-name"
-                      name="full-name"
+                      id="fullName"
+                      name="fullName"
                       type="text"
                       autoComplete="name"
-                      required
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                      value={formData.fullName}
+                      onChange={handleChange}
+                      className={`appearance-none block w-full px-3 py-2 border ${
+                        formErrors.fullName ? 'border-red-500' : 'border-gray-300'
+                      } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm`}
                     />
+                    {formErrors.fullName && (
+                      <p className="mt-1 text-sm text-red-600">{formErrors.fullName}</p>
+                    )}
                   </div>
                 </div>
                 
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
                     Phone Number*
                   </label>
                   <div className="mt-1">
                     <input
-                      id="phone"
-                      name="phone"
+                      id="phoneNumber"
+                      name="phoneNumber"
                       type="tel"
                       autoComplete="tel"
-                      required
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                      value={formData.phoneNumber}
+                      onChange={handleChange}
+                      className={`appearance-none block w-full px-3 py-2 border ${
+                        formErrors.phoneNumber ? 'border-red-500' : 'border-gray-300'
+                      } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm`}
                     />
+                    {formErrors.phoneNumber && (
+                      <p className="mt-1 text-sm text-red-600">{formErrors.phoneNumber}</p>
+                    )}
                   </div>
                 </div>
                 
@@ -296,25 +428,28 @@ export default function AuthPage() {
                       id="profession"
                       name="profession"
                       type="text"
-                      required
-                      value={profession}
-                      onChange={(e) => setProfession(e.target.value)}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                      value={formData.profession}
+                      onChange={handleChange}
+                      className={`appearance-none block w-full px-3 py-2 border ${
+                        formErrors.profession ? 'border-red-500' : 'border-gray-300'
+                      } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm`}
                     />
+                    {formErrors.profession && (
+                      <p className="mt-1 text-sm text-red-600">{formErrors.profession}</p>
+                    )}
                   </div>
                 </div>
                 
                 <div>
-                  <label htmlFor="referral" className="block text-sm font-medium text-gray-700">
-                    How did you hear about us?*
+                  <label htmlFor="referralSource" className="block text-sm font-medium text-gray-700">
+                    How did you hear about us? <span className="text-gray-500">(optional)</span>
                   </label>
                   <div className="mt-1">
                     <select
-                      id="referral"
-                      name="referral"
-                      required
-                      value={referralSource}
-                      onChange={(e) => setReferralSource(e.target.value)}
+                      id="referralSource"
+                      name="referralSource"
+                      value={formData.referralSource}
+                      onChange={handleChange}
                       className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
                     >
                       {REFERRAL_SOURCES.map((source) => (
@@ -330,10 +465,10 @@ export default function AuthPage() {
               <div className="mt-4">
                 <button
                   type="submit"
-                  disabled={registerMutation.isPending}
+                  disabled={isLoading}
                   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-70"
                 >
-                  {registerMutation.isPending ? (
+                  {isLoading ? (
                     <>
                       <Loader2 className="animate-spin h-4 w-4 mr-2" />
                       Creating account...
@@ -352,9 +487,9 @@ export default function AuthPage() {
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-600 opacity-90"></div>
           <div className="absolute inset-0 bg-pattern opacity-10"></div>
           <div className="relative p-8 flex flex-col justify-center h-full text-white">
-            <h2 className="text-3xl font-extrabold mb-4">Welcome to CodeLearn</h2>
+            <h2 className="text-3xl font-extrabold mb-4">Welcome to SimpleCodr...</h2>
             <p className="text-lg mb-6">
-              The ultimate platform for coding education, helping you understand, debug, and build better code.
+              The ultimate platform for learning coding, helping you understand, debug, and build better code.
             </p>
             <ul className="space-y-2">
               <li className="flex items-start">

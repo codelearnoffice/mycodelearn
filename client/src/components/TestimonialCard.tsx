@@ -4,21 +4,19 @@ interface TestimonialCardProps {
   content: string;
   name: string;
   role: string;
+  rating: number;
 }
 
 const TestimonialCard: React.FC<TestimonialCardProps> = ({
   content,
   name,
-  role
+  role,
+  rating
 }) => {
   return (
-    <div className="bg-neutral p-6 rounded-lg">
+    <div className="bg-neutral p-6 rounded-lg border border-gray-300 hover:border-primary transition-colors duration-200">
       <div className="flex items-center mb-4">
-        <div className="text-secondary">
-          {[...Array(5)].map((_, i) => (
-            <Star key={i} className="inline-block w-4 h-4 fill-current" />
-          ))}
-        </div>
+        <span className="text-primary font-semibold text-lg">Rating: {rating}</span>
       </div>
       <p className="text-gray-700">{content}</p>
       <div className="mt-6 flex items-center">

@@ -2,12 +2,15 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { User } from "lucide-react";
+
 import { useAuth } from "@/hooks/use-auth";
-import { LogOut, User, Folder } from "lucide-react";
+import { LogOut, Folder } from "lucide-react";
+import codelearnLogo from "@/assets/codelearnlogo.png";
 
 const Navbar = () => {
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
-  const { user, logoutMutation } = useAuth();
+  const { user, logout } = useAuth();
   const [location] = useLocation();
 
   const toggleMobileMenu = () => {
@@ -15,25 +18,34 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
-    logoutMutation.mutate();
+    logout();
     setMobileMenuVisible(false);
   };
+
 
   const isActivePath = (path: string) => {
     return location === path;
   };
 
   return (
-    <nav className="bg-white shadow-sm sticky top-0 z-50">
+    <nav className="bg-white shadow-sm fixed top-0 left-0 right-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/">
-                <span className="text-2xl font-bold text-primary cursor-pointer">
-                  Code<span className="text-secondary">Learn</span>
-                </span>
-              </Link>
+              <Link href="/" className="flex items-center space-x-2">
+  <img
+    src={codelearnLogo}
+    alt="CodeLearn Logo"
+    className="h-7 w-auto cursor-pointer"
+    style={{ display: 'inline-block' }}
+  />
+  <span className=" font-bold text-primary cursor-pointer select-none" 
+  style={{ fontSize: "1.3rem", lineHeight: "2rem" }} // 1.5rem is between xl (1.25rem) and 2xl (1.5rem)
+  >
+    Simple<span className="text-secondary">Codr</span>
+  </span>
+</Link>
             </div>
           </div>
           <div className="hidden md:flex md:items-center md:space-x-6">
@@ -64,15 +76,11 @@ const Navbar = () => {
             
             {user ? (
               <div className="flex items-center space-x-4">
-                <Link href="/saved-projects" className={cn(
-                    "text-sm font-medium flex items-center gap-1 transition-colors duration-200",
-                    isActivePath("/saved-projects") 
-                      ? "text-secondary font-semibold" 
-                      : "text-primary hover:text-secondary"
-                  )}>
-                    <Folder size={16} />
-                    Saved Projects
-                </Link>
+                
+<Link href="/my-account" className="text-gray-700 hover:text-blue-600 p-2 rounded-full" aria-label="My Account">
+  <User size={22} />
+</Link>
+                
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -114,8 +122,8 @@ const Navbar = () => {
             className={cn(
               "block text-base font-medium p-2",
               isActivePath("/code-explanation") 
-                ? "text-secondary font-semibold" 
-                : "text-primary hover:text-secondary"
+                ? "text-secondary font-semibold dark:text-secondary" 
+                : "text-primary hover:text-secondary dark:text-gray-300 dark:hover:text-secondary"
             )}
             onClick={() => setMobileMenuVisible(false)}
           >
@@ -126,8 +134,8 @@ const Navbar = () => {
             className={cn(
               "block text-base font-medium p-2",
               isActivePath("/code-feedback") 
-                ? "text-secondary font-semibold" 
-                : "text-primary hover:text-secondary"
+                ? "text-secondary font-semibold dark:text-secondary" 
+                : "text-primary hover:text-secondary dark:text-gray-300 dark:hover:text-secondary"
             )}
             onClick={() => setMobileMenuVisible(false)}
           >
@@ -138,8 +146,8 @@ const Navbar = () => {
             className={cn(
               "block text-base font-medium p-2",
               isActivePath("/project-ideas") 
-                ? "text-secondary font-semibold" 
-                : "text-primary hover:text-secondary"
+                ? "text-secondary font-semibold dark:text-secondary" 
+                : "text-primary hover:text-secondary dark:text-gray-300 dark:hover:text-secondary"
             )}
             onClick={() => setMobileMenuVisible(false)}
           >
@@ -170,14 +178,16 @@ const Navbar = () => {
               </Button>
             </>
           ) : (
-            <Link href="/auth">
-              <Button 
-                className="block w-full bg-secondary text-white hover:bg-secondary/90 mt-4"
-                onClick={() => setMobileMenuVisible(false)}
-              >
-                Sign Up / Login
-              </Button>
-            </Link>
+            <>
+              <Link href="/auth">
+                <Button 
+                  className="block w-full bg-secondary text-white hover:bg-secondary/90 mt-4"
+                  onClick={() => setMobileMenuVisible(false)}
+                >
+                  Sign Up / Login
+                </Button>
+              </Link>
+            </>
           )}
         </div>
       </div>

@@ -1,8 +1,10 @@
 import { useState } from "react";
+import Navbar from "@/components/Navbar";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { Copy, Loader2, Save } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import "@/styles/ProjectGenerator.css";
 
 const SKILL_LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
@@ -19,6 +21,7 @@ const INTEREST_AREAS = [
 export default function ProjectIdeasPage() {
   const { user } = useAuth();
   const { usageCount, trackUsage, saveProject, isSaving } = useFeatureUsage("project");
+  const { toast } = useToast();
   
   const [skillLevel, setSkillLevel] = useState('Beginner');
   const [programmingLanguage, setProgrammingLanguage] = useState('Python');
@@ -45,31 +48,54 @@ export default function ProjectIdeasPage() {
       // Make API request to get a project idea
       const prompt = `Generate a unique and practical project idea for a ${skillLevel.toLowerCase()} programmer who knows ${programmingLanguage} and is interested in ${interestArea}. Additional interests: ${additionalInterests || 'None'}. Include: 1) Project title 2) Description 3) Key features 4) Learning outcomes 5) Estimated time to complete 6) Required technologies 7) Step-by-step approach`;
 
-      const response = await fetch("/api/project-ideas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('https://api.a0.dev/ai/llm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          skillLevel,
-          programmingLanguage,
-          interestArea,
-          additionalInterests,
-          prompt
+          messages: [
+            { role: 'system', content: 'You are a creative programming mentor.' },
+            { role: 'user', content: prompt }
+          ]
         })
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to generate project idea");
+        let errorMessage = "Failed to generate project idea";
+        try {
+          const error = await response.json();
+          errorMessage = error?.message || errorMessage;
+        } catch (_) {
+          // If response is not JSON, keep the default message
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
-      setProjectIdea(data.projectIdea);
+      console.log("API Response:", data); // Debug log
+      
+      // Handle different API response formats
+      const ideaText = data.completion || data.projectIdea || data.content || data.result || data.output || "";
+      
+      if (!ideaText) {
+        console.warn("No project idea found in API response:", data);
+      }
+      
+      setProjectIdea(ideaText);
       
       // Generate a default title based on the parameters
       setProjectTitle(`${skillLevel} ${programmingLanguage} ${interestArea} Project`);
+      
+      toast({
+        title: "Success",
+        description: "Project idea generated!",
+      });
     } catch (error) {
       console.error("Error generating project idea:", error);
-      alert(error instanceof Error ? error.message : "Failed to generate project idea");
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to generate project idea",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -82,8 +108,20 @@ export default function ProjectIdeasPage() {
     }
 
     navigator.clipboard.writeText(projectIdea)
-      .then(() => alert("Project idea copied to clipboard!"))
-      .catch(err => console.error("Failed to copy: ", err));
+      .then(() => {
+        toast({
+          title: "Copied",
+          description: "Project idea copied to clipboard!"
+        });
+      })
+      .catch(err => {
+        console.error("Failed to copy: ", err);
+        toast({
+          title: "Error",
+          description: "Failed to copy to clipboard",
+          variant: "destructive"
+        });
+      });
   };
   
   const handleSave = () => {
@@ -97,7 +135,11 @@ export default function ProjectIdeasPage() {
   
   const handleSaveSubmit = () => {
     if (!projectTitle.trim()) {
-      alert("Please enter a title for your project");
+      toast({
+        title: "Error",
+        description: "Please enter a title for your project",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -107,13 +149,19 @@ export default function ProjectIdeasPage() {
       content: projectIdea
     });
     
+    toast({
+      title: "Success",
+      description: "Project saved to your account!",
+    });
+    
     setShowSaveForm(false);
   };
 
   return (
-    <div className="project-generator-container">
-      <div className="scroll-view">
-        <h1 className="title">Project Idea Generator</h1>
+    <div className="bg-background" style={{ minHeight: '100vh', paddingBottom: '32px' }}>
+      <Navbar />
+      <div style={{ width: '100%', maxWidth: 900, margin: '0 auto', padding: 24, paddingTop: '110px' }}>
+        <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 24 }}>Project Idea Generator</h1>
         
         <div className="picker-container">
           <label className="label">Skill Level:</label>
@@ -179,7 +227,7 @@ export default function ProjectIdeasPage() {
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Generating...
+              <span>Generating...</span>
             </>
           ) : (
             'Generate Project Idea'
@@ -188,19 +236,20 @@ export default function ProjectIdeasPage() {
 
         {projectIdea && (
           <div className="idea-container">
-            <h2 className="idea-title">Your Personalized Project Idea:</h2>
-            <div className="idea-text">{projectIdea}</div>
-            
-            <div className="button-group">
+            <div className="explanation-header">
+              <h2 className="idea-title">Your Personalized Project Idea:</h2>
               <button 
                 className="copy-button" 
                 onClick={handleCopy}
+                title="Copy to clipboard"
               >
-                <Copy size={16} />
-                Copy Idea
+                <Copy className="h-4 w-4" />
               </button>
-              
-              {user && (
+            </div>
+            <div className="idea-text">{projectIdea}</div>
+            
+            {user && (
+              <div className="button-group">
                 <button 
                   className="save-button" 
                   onClick={handleSave}
@@ -208,13 +257,13 @@ export default function ProjectIdeasPage() {
                   <Save size={16} />
                   Save to Account
                 </button>
-              )}
-            </div>
+              </div>
+            )}
             
             {showSaveForm && (
-              <div className="mt-4 p-4 border border-gray-200 rounded-md bg-gray-50">
-                <h3 className="text-lg font-semibold mb-2">Save Project</h3>
-                <div className="mb-4">
+              <div className="save-form">
+                <h3 className="save-form-title">Save Project</h3>
+                <div className="save-form-field">
                   <label className="label">Project Title:</label>
                   <input
                     type="text"
@@ -224,21 +273,21 @@ export default function ProjectIdeasPage() {
                     placeholder="Enter a title for your project"
                   />
                 </div>
-                <div className="flex space-x-2">
+                <div className="save-form-buttons">
                   <button 
-                    className="button !min-w-0 !m-0"
+                    className="button save-button-small"
                     onClick={handleSaveSubmit}
                     disabled={isSaving}
                   >
                     {isSaving ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Saving...
+                        <span>Saving...</span>
                       </>
                     ) : 'Save'}
                   </button>
                   <button 
-                    className="copy-button" 
+                    className="button cancel-button" 
                     onClick={() => setShowSaveForm(false)}
                   >
                     Cancel
@@ -251,14 +300,13 @@ export default function ProjectIdeasPage() {
 
         {showLoginPrompt && (
           <div className="login-prompt">
-            <h3 className="login-prompt-title">Create an Account</h3>
-            <p className="login-prompt-text">
+            <p>
               {!user && usageCount >= 3 
-                ? "You've reached the limit of free project generations. Create an account to continue using this feature."
-                : "Please create an account to copy project ideas, save them to your account, and access more features."}
+                ? "You've reached the limit of free project generations. Sign in to continue using this feature."
+                : "Please sign in to copy project ideas, save them to your account, and access more features."}
             </p>
             <Link href="/auth" className="login-button">
-              Sign Up / Login
+              Sign In
             </Link>
           </div>
         )}

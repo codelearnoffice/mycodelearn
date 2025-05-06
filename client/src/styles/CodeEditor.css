@@ -138,11 +138,18 @@
   margin-top: 1.5rem;
 }
 
+.explanation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
 .output-title {
   font-size: 1.25rem;
   font-weight: 600;
   color: #1f2937;
-  margin-bottom: 1rem;
+  margin: 0;
 }
 
 .output-text {
@@ -156,19 +163,20 @@
 .copy-button {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
   background-color: #f3f4f6;
   border: 1px solid #e5e7eb;
   border-radius: 0.375rem;
   color: #374151;
-  font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.15s ease-in-out;
 }
 
 .copy-button:hover {
   background-color: #e5e7eb;
+  color: #4f46e5;
 }
 
 .login-prompt {
@@ -178,6 +186,13 @@
   border: 1px solid #bae6fd;
   border-radius: 0.5rem;
   text-align: center;
+}
+
+.login-prompt p {
+  color: #0c4a6e;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
 }
 
 .login-prompt-title {

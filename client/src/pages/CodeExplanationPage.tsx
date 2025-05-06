@@ -1,8 +1,10 @@
 import { useState } from "react";
+import Navbar from "@/components/Navbar";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useFeatureUsage } from "@/hooks/use-feature-usage";
 import { Copy, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import "@/styles/CodeExplanation.css";
 
 const PROGRAMMING_LANGUAGES = [
@@ -23,6 +25,7 @@ const EXPLANATION_TONES = [
 export default function CodeExplanationPage() {
   const { user } = useAuth();
   const { usageCount, isAtFreeLimit, trackUsage } = useFeatureUsage("explanation");
+  const { toast } = useToast();
 
   const [code, setCode] = useState("");
   const [programmingLanguage, setProgrammingLanguage] = useState("Python");
@@ -34,49 +37,78 @@ export default function CodeExplanationPage() {
 
   const getExplanation = async () => {
     if (!code.trim()) {
-      alert("Please enter some code to explain");
+      toast({
+        title: "Error",
+        description: "Please enter some code to explain",
+        variant: "destructive"
+      });
       return;
     }
 
-    // Check if non-authenticated user has exceeded free usage
     if (!user && usageCount >= 3) {
       setShowLoginPrompt(true);
       return;
     }
 
-    // Check if non-premium user tries to use non-English explanation
     if (!user && explanationLanguage !== "English") {
-      alert("Multiple languages only available for registered users");
+      toast({
+        title: "Feature Restricted",
+        description: "Multiple languages only available for registered users",
+        variant: "destructive"
+      });
       return;
     }
 
     setLoading(true);
     try {
-      // Track usage first
       await trackUsage();
       
-      // Make API request
-      const response = await fetch("/api/code-explanation", {
+      const prompt = `As a ${explanationTone.toLowerCase()} programming teacher, explain this ${programmingLanguage} code in ${explanationLanguage}. Focus on clear, direct explanations for each line. Here's the code:\n\n${code}`;
+
+      const response = await fetch('https://api.a0.dev/ai/llm', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          code,
-          programmingLanguage,
-          explanationLanguage,
-          explanationTone
+          messages: [
+            { role: 'system', content: 'You are a helpful programming teacher.' },
+            { role: 'user', content: prompt }
+          ]
         })
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to generate explanation");
+        let errorMessage = "Failed to generate explanation";
+        try {
+          const error = await response.json();
+          errorMessage = error?.message || errorMessage;
+        } catch (_) {
+          // If response is not JSON, keep the default message
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
-      setExplanation(data.explanation);
+      console.log("API Response:", data); // Debug log
+      
+      // Handle different API response formats
+      const explanationText = data.completion || data.explanation || data.content || data.result || data.output || "";
+      
+      if (!explanationText) {
+        console.warn("No explanation text found in API response:", data);
+      }
+      
+      setExplanation(explanationText);
+      toast({
+        title: "Success",
+        description: "Code explanation generated!",
+      });
     } catch (error) {
       console.error("Error generating explanation:", error);
-      alert(error instanceof Error ? error.message : "Failed to generate explanation");
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to generate explanation",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -89,14 +121,27 @@ export default function CodeExplanationPage() {
     }
 
     navigator.clipboard.writeText(explanation)
-      .then(() => alert("Explanation copied to clipboard!"))
-      .catch(err => console.error("Failed to copy: ", err));
+      .then(() => {
+        toast({
+          title: "Copied",
+          description: "Explanation copied to clipboard!"
+        });
+      })
+      .catch(err => {
+        console.error("Failed to copy: ", err);
+        toast({
+          title: "Error",
+          description: "Failed to copy to clipboard",
+          variant: "destructive"
+        });
+      });
   };
 
-  return (
-    <div className="code-explanation-container">
-      <div className="content">
-        <h1 className="title">Code Explanation Tool</h1>
+   return (
+    <div className="bg-background" style={{ minHeight: '100vh', paddingBottom: '32px' }}>
+      <Navbar />
+      <div style={{ width: '100%', maxWidth: 900, margin: '0 auto', padding: 24, paddingTop: '110px' }}>
+        <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 24 }}>Code Explanation Tool</h1>
         
         <div className="select-container">
           <label className="label">Programming Language:</label>
@@ -130,17 +175,11 @@ export default function CodeExplanationPage() {
             value={explanationLanguage}
             onChange={(e) => setExplanationLanguage(e.target.value)}
             className="select"
-            disabled={!user}
           >
             {EXPLANATION_LANGUAGES.map((lang) => (
               <option key={lang} value={lang}>{lang}</option>
             ))}
           </select>
-          {!user && (
-            <p className="text-sm text-orange-600 mt-1">
-              Multiple languages available only for registered users
-            </p>
-          )}
         </div>
 
         <div className="code-input-container">
@@ -154,50 +193,39 @@ export default function CodeExplanationPage() {
           />
         </div>
 
-        {!user && (
-          <div className="usage-count">
-            You have used <span>{usageCount}/3</span> free explanations
-          </div>
-        )}
-
         <button 
-          className={`button ${loading ? "button-disabled" : ""}`}
+          className={`button ${loading ? 'button-disabled' : ''}`}
           onClick={getExplanation}
           disabled={loading}
         >
           {loading ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Generating...
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <span>Generating...</span>
             </>
-          ) : "Explain Code"}
+          ) : 'Explain Code'}
         </button>
-
-        {explanation && (
-          <div className="explanation-container">
-            <h2 className="explanation-title">Explanation:</h2>
-            <div className="explanation-text">{explanation}</div>
-            <button 
-              className="copy-button" 
-              onClick={handleCopy}
-            >
-              <Copy size={16} />
-              Copy Explanation
-            </button>
-          </div>
-        )}
 
         {showLoginPrompt && (
           <div className="login-prompt">
-            <h3 className="login-prompt-title">Create an Account</h3>
-            <p className="login-prompt-text">
-              {!user && usageCount >= 3 
-                ? "You've reached the limit of free explanations. Create an account to continue using this feature."
-                : "Please create an account to copy explanations and access more features."}
-            </p>
-            <Link href="/auth" className="login-button">
-              Sign Up / Login
-            </Link>
+            <p>You've reached the limit for free explanations. Please sign in to continue.</p>
+            <Link to="/auth" className="login-button">Sign In</Link>
+          </div>
+        )}
+
+        {explanation && (
+          <div className="explanation-container">
+            <div className="explanation-header">
+              <h2 className="explanation-title">Explanation:</h2>
+              <button 
+                className="copy-button" 
+                onClick={handleCopy}
+                title="Copy to clipboard"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="explanation-text">{explanation}</div>
           </div>
         )}
       </div>

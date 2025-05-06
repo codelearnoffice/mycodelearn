@@ -122,11 +122,18 @@
   margin-top: 1.5rem;
 }
 
+.explanation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
 .idea-title {
   font-size: 1.25rem;
   font-weight: 600;
   color: #1f2937;
-  margin-bottom: 1rem;
+  margin: 0;
 }
 
 .idea-text {
@@ -143,32 +150,80 @@
   margin-top: 1rem;
 }
 
-.copy-button, .save-button {
+.copy-button {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
   background-color: #f3f4f6;
   border: 1px solid #e5e7eb;
   border-radius: 0.375rem;
   color: #374151;
-  font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.15s ease-in-out;
 }
 
 .copy-button:hover {
   background-color: #e5e7eb;
+  color: #4f46e5;
 }
 
 .save-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
   background-color: #ecfdf5;
   border: 1px solid #d1fae5;
+  border-radius: 0.375rem;
   color: #065f46;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
 }
 
 .save-button:hover {
   background-color: #d1fae5;
+}
+
+.save-form {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+}
+
+.save-form-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.save-form-field {
+  margin-bottom: 1rem;
+}
+
+.save-form-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.save-button-small {
+  min-width: 100px;
+  margin: 0;
+}
+
+.cancel-button {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.cancel-button:hover {
+  background: #e5e7eb;
 }
 
 .login-prompt {
@@ -178,6 +233,13 @@
   border: 1px solid #bae6fd;
   border-radius: 0.5rem;
   text-align: center;
+}
+
+.login-prompt p {
+  color: #0c4a6e;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
 }
 
 .login-prompt-title {

@@ -45,74 +45,9 @@ export default function Support() {
           Support
         </h1>
         
-        <div className="grid md:grid-cols-2 gap-12">
-          <div className="bg-white shadow-lg rounded-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Contact Us</h2>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Your Name
-                </label>
-                <Input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="John Smith"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="john@example.com"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
-                  Subject
-                </label>
-                <Input
-                  id="subject"
-                  type="text"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Help with Code Explainer"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                  Message
-                </label>
-                <textarea
-                  id="message"
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Please describe your issue or question in detail..."
-                />
-              </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full bg-primary hover:bg-primary/90 text-white"
-              >
-                Send Message
-              </Button>
-            </form>
-          </div>
-          
-          <div>
+        <div className="flex justify-center">
+          <div className="max-w-2xl w-full">
+
             <div className="bg-white shadow-lg rounded-lg p-8 mb-8">
               <h2 className="text-2xl font-bold text-gray-800 mb-6">Frequently Asked Questions</h2>
               

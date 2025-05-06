@@ -30,11 +30,22 @@ export function useFeatureUsage(featureType: FeatureType) {
   // Mutation to track feature usage
   const trackUsageMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest(
-        "POST", 
-        `/api/feature-usage/${featureType}`,
-        {} // Empty body, we just need to track the usage
+      // Robust: send both Authorization header and credentials: 'include'
+      const token = localStorage.getItem('token');
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch(`http://localhost:3000/api/feature-usage/${featureType}`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({}),
+          credentials: 'include',
+        }
       );
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || 'Feature usage failed');
+      }
       return await res.json();
     },
     onSuccess: () => {
